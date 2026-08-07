@@ -103,29 +103,21 @@
         <button onclick="addName()" style="padding: 8px 15px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer;">添加</button>
         
         <!-- 显示当前已添加的名字 -->
-        <div id="name-list-display" style="margin-top: 10px; color: #666; font-size: 0.9em; min-height: 20px;">
-            (当前名单为空)
+        <div id="name-list-display" style="margin-top: 15px; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;">
+            <!-- 名字标签会动态生成在这里 -->
         </div>
     </div>
 
     <!-- 2. 转盘区域 -->
     <div style="position: relative; width: 300px; height: 300px; margin: 0 auto;">
-        <!-- 点击 Canvas 即可开始旋转 -->
-        <canvas id="wheel-canvas" width="300" height="300" 
-                onclick="startSpin()" 
-                style="cursor: pointer; border-radius: 50%; box-shadow: 0 10px 20px rgba(0,0,0,0.2); transition: transform 4s cubic-bezier(0.25, 0.1, 0.25, 1);">
-        </canvas>
-        <!-- 红色指针 -->
+        <!-- 指针 -->
         <div style="position: absolute; top: -10px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-top: 30px solid #ff4757; z-index: 10;"></div>
+        <!-- 画布 -->
+        <canvas id="wheel-canvas" width="300" height="300" style="cursor: pointer; border-radius: 50%; box-shadow: 0 10px 20px rgba(0,0,0,0.2);"></canvas>
     </div>
 
-    <!-- 3. 结果展示区域 -->
-    <div style="margin-top: 30px;">
-        <h2 style="color: #333;">🎉 幸运儿是：</h2>
-        <div id="winner-result" style="font-size: 3em; color: #ff4757; font-weight: bold; margin-top: 10px; min-height: 1.2em;">
-            ?
-        </div>
-    </div>
+    <!-- 3. 结果展示 -->
+    <div id="winner-display" style="margin-top: 20px; font-size: 24px; font-weight: bold; color: #ff4757; height: 40px;"></div>
 </div>
     <!-- 这里是用来显示表格的区域 -->
     <div id="content-area">
@@ -226,55 +218,81 @@
     function hideContent() {
         document.getElementById('content-area').style.display = 'none';
     }
-        // ==========================================
-      // ==========================================
-    // 新增：自定义名单抽签逻辑
+    // ==========================================
+    // 新增：抽签工具逻辑代码 (从下面开始复制)
     // ==========================================
 
-    // 存储名字的数组
+    // 存储名单的数组
     let lotteryNames = []; 
-    let currentRotation = 0; // 记录当前的旋转角度
+    // 控制旋转状态
+    let isSpinning = false; 
 
     // 1. 切换显示/隐藏抽签区域
     function toggleLottery() {
-        const container = document.getElementById('lottery-container');
-        const table = document.getElementById('content-area'); // 假设表格容器ID是这个
+        const lotteryContainer = document.getElementById('lottery-container');
+        const contentArea = document.getElementById('content-area');
+        
+        if (contentArea.style.display === 'block') {
+            contentArea.style.display = 'none';
+        }
 
-        if (container.style.display === 'none') {
-            container.style.display = 'block';
-            if(table) table.style.display = 'none'; // 互斥显示
-            drawWheel(); // 显示时重绘转盘
+        if (lotteryContainer.style.display === 'none') {
+            lotteryContainer.style.display = 'block';
+            drawWheel(); // 每次打开都重绘一下，防止空白
         } else {
-            container.style.display = 'none';
+            lotteryContainer.style.display = 'none';
         }
     }
 
-    // 2. 添加名字功能
+    // 2. 添加名字
     function addName() {
         const input = document.getElementById('name-input');
         const name = input.value.trim();
-
+        
         if (name) {
-            lotteryNames.push(name); // 加入数组
+            lotteryNames.push(name);
             input.value = ''; // 清空输入框
-            updateNameList(); // 更新下方列表显示
-            drawWheel();      // 重绘转盘
+            updateNameListDisplay(); // 更新下方列表显示
+            drawWheel(); // 重绘转盘
         } else {
             alert("请输入名字！");
         }
     }
 
-    // 更新名字列表显示
-    function updateNameList() {
-        const listDiv = document.getElementById('name-list-display');
-        if (lotteryNames.length === 0) {
-            listDiv.innerText = "(当前名单为空)";
-        } else {
-            listDiv.innerText = "名单: " + lotteryNames.join("、");
-        }
+    // 3. 删除名字 (通过索引删除)
+    function removeName(index) {
+        lotteryNames.splice(index, 1);
+        updateNameListDisplay();
+        drawWheel();
     }
 
-    // 3. 绘制转盘 (核心绘图逻辑)
+    // 4. 更新名字列表的显示 (生成带删除按钮的标签)
+    function updateNameListDisplay() {
+        const listDiv = document.getElementById('name-list-display');
+        listDiv.innerHTML = ''; // 清空旧内容
+
+        lotteryNames.forEach((name, index) => {
+            // 创建每个名字的容器
+            const tag = document.createElement('span');
+            tag.style.cssText = "background: #e0e7ff; color: #333; padding: 5px 10px; border-radius: 15px; font-size: 14px; display: flex; align-items: center; gap: 5px;";
+            
+            // 名字文本
+            const textSpan = document.createElement('span');
+            textSpan.innerText = name;
+            
+            // 删除按钮 (小叉号)
+            const closeBtn = document.createElement('span');
+            closeBtn.innerText = '×';
+            closeBtn.style.cssText = "cursor: pointer; color: #ff4757; font-weight: bold; font-size: 16px;";
+            closeBtn.onclick = function() { removeName(index); }; // 绑定删除事件
+
+            tag.appendChild(textSpan);
+            tag.appendChild(closeBtn);
+            listDiv.appendChild(tag);
+        });
+    }
+
+    // 5. 绘制转盘
     function drawWheel() {
         const canvas = document.getElementById('wheel-canvas');
         const ctx = canvas.getContext('2d');
@@ -282,33 +300,33 @@
         const height = canvas.height;
         const centerX = width / 2;
         const centerY = height / 2;
-        const radius = width / 2;
+        const radius = width / 2 - 10; // 留一点边距
 
         ctx.clearRect(0, 0, width, height); // 清空画布
 
         if (lotteryNames.length === 0) {
-            // 如果没名字，画个灰色的圈
+            // 如果没名字，画个灰色圆
             ctx.beginPath();
             ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
-            ctx.fillStyle = "#eee";
+            ctx.fillStyle = '#eee';
             ctx.fill();
-            ctx.fillStyle = "#999";
-            ctx.font = "20px Arial";
-            ctx.textAlign = "center";
-            ctx.fillText("请输入名字", centerX, centerY);
+            ctx.fillStyle = '#999';
+            ctx.font = '20px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText("请在上方添加名字", centerX, centerY);
             return;
         }
 
-        const step = (2 * Math.PI) / lotteryNames.length; // 每个扇形的弧度
-
-        // 颜色盘 (循环使用)
-        const colors = ['#FFD700', '#FF6347', '#87CEEB', '#98FB98', '#DDA0DD', '#F0E68C'];
+        const step = (2 * Math.PI) / lotteryNames.length;
+        const colors = ['#FFC0CB', '#87CEFA', '#98FB98', '#FFD700', '#DDA0DD', '#F0E68C']; // 随机配色池
 
         for (let i = 0; i < lotteryNames.length; i++) {
             // 画扇形
             ctx.beginPath();
             ctx.moveTo(centerX, centerY);
             ctx.arc(centerX, centerY, radius, i * step, (i + 1) * step);
+            ctx.closePath();
             ctx.fillStyle = colors[i % colors.length];
             ctx.fill();
             ctx.stroke();
@@ -316,7 +334,7 @@
             // 画文字
             ctx.save();
             ctx.translate(centerX, centerY);
-            ctx.rotate(i * step + step / 2); // 旋转到扇形中间
+            ctx.rotate(i * step + step / 2); // 旋转到扇形中心
             ctx.textAlign = "right";
             ctx.fillStyle = "#333";
             ctx.font = "bold 16px Arial";
@@ -325,63 +343,48 @@
         }
     }
 
-    // 4. 开始旋转 (点击触发)
-    function startSpin() {
-        if (lotteryNames.length < 2) {
-            alert("请至少输入两个名字才能开始抽签！");
-            return;
-        }
+    // 6. 点击转盘开始抽奖
+    document.getElementById('wheel-canvas').addEventListener('click', function() {
+        if (isSpinning || lotteryNames.length === 0) return; // 正在转或没名字时不响应
+        
+        isSpinning = true;
+        const winnerDiv = document.getElementById('winner-display');
+        winnerDiv.innerText = "抽奖中...";
 
+        // 简单的旋转动画逻辑
+        let speed = 20 + Math.random() * 10; // 初始速度
+        let rotation = 0;
         const canvas = document.getElementById('wheel-canvas');
-        const resultDiv = document.getElementById('winner-result');
         
-        resultDiv.innerText = "旋转中...";
+        function animate() {
+            rotation += speed;
+            speed *= 0.98; // 慢慢减速
+            
+            // 旋转画布本身
+            canvas.style.transform = `rotate(${rotation}deg)`;
 
-        // 随机旋转圈数 (5到10圈) + 随机角度
-        const randomSpins = 360 * (5 + Math.random() * 5); 
-        const randomDegree = Math.floor(Math.random() * 360);
-        
-        // 累加旋转角度，保证每次都顺滑接着转
-        currentRotation += randomSpins + randomDegree;
-
-        // 使用 CSS transform 进行旋转动画
-        canvas.style.transform = `rotate(${currentRotation}deg)`;
-
-        // 计算结果 (等待动画结束，这里假设 CSS transition 是 4秒)
-        setTimeout(() => {
-            calculateWinner(currentRotation);
-        }, 4000); 
-    }
-
-    // 5. 计算谁是幸运儿
-    function calculateWinner(rotation) {
-        // 规范化角度到 0-360
-        const actualRotation = rotation % 360;
-        
-        // 指针在上方(270度位置)，Canvas 0度在右方(3点钟)。
-        // 这是一个数学换算，算出指针落在了哪个扇形索引上
-        // 这里的逻辑：指针不动，盘在转。
-        // 简单算法：(360 - 实际角度 + 偏移量) % 360
-        
-        // 修正逻辑：CSS旋转是顺时针。
-        // 0度在右边。指针在上方(相当于逆时针90度，或270度)。
-        // 实际上我们只需要算出相对位移。
-        
-        const sliceSize = 360 / lotteryNames.length;
-        
-        // 这里的 270 是因为指针在正上方，而 Canvas 的 0 度在正右方
-        // 需要加上 270 度来对齐指针位置，再取余
-        let index = Math.floor(((360 - actualRotation + 270) % 360) / sliceSize);
-        
-        // 防止索引越界
-        index = index % lotteryNames.length;
-
-        const winner = lotteryNames[index];
-        document.getElementById('winner-result').innerText = winner;
-        
-        // 简单的庆祝效果
-        alert(`恭喜 ${winner} 被抽中！`);
-    }
+            if (speed < 0.1) {
+                // 停止
+                isSpinning = false;
+                canvas.style.transform = `rotate(${rotation}deg)`;
+                
+                // 计算结果 (注意：指针在上方，即 -90度 或 270度位置，需要数学换算)
+                // 简化算法：直接取模计算最终角度对应的索引
+                const finalAngle = rotation % 360;
+                // 指针在顶部(270度/ -90度)，画布顺时针转。
+                // 这是一个简化的近似计算，为了演示效果：
+                const index = Math.floor(((360 - finalAngle + 270) % 360) / (360 / lotteryNames.length));
+                
+                // 修正索引范围
+                let winningIndex = index % lotteryNames.length;
+                
+                winnerDiv.innerText = "🎉 恭喜：" + lotteryNames[winningIndex] + " 🎉";
+            } else {
+                requestAnimationFrame(animate);
+            }
+        }
+        animate();
+    });
 </script>
 
 </body>
