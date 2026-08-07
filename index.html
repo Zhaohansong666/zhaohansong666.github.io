@@ -1,143 +1,198 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>班级管理系统</title>
-<style>
-  /* 全局样式重置与设置 */
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>班级管理系统</title>
+    <style>
+        /* --- 基础样式 (保持之前的精美设计) --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
+        
+        .container {
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            width: 100%;
+            max-width: 900px; /* 加宽一点以容纳表格 */
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
 
-  body {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    min-height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 20px;
-  }
+        h1 { color: #333; font-size: 2.5rem; margin-bottom: 30px; letter-spacing: 2px; text-transform: uppercase; }
 
-  /* 主容器卡片样式 */
-  .container {
-    background-color: rgba(255, 255, 255, 0.92);
-    border-radius: 20px;
-    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
-    padding: 40px;
-    width: 100%;
-    max-width: 600px;
-    text-align: center;
-    transition: transform 0.3s ease;
-  }
+        /* --- 按钮样式 --- */
+        .btn-group { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; }
+        .btn {
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            color: white;
+            font-weight: bold;
+            min-width: 150px;
+        }
+        .btn:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        .btn:active { transform: translateY(1px); }
 
-  .container:hover {
-    transform: translateY(-5px);
-  }
+        .btn-student { background: linear-gradient(45deg, #FF512F, #DD2476); }
+        .btn-grade { background: linear-gradient(45deg, #1FA2FF, #12D8FA, #A6FFCB); color: #333; }
+        .btn-course { background: linear-gradient(45deg, #F09819, #EDDE5D); color: #333; }
 
-  /* 标题样式 */
-  h1 {
-    font-size: 3.2em;
-    font-weight: 800;
-    color: #2d3748;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    margin-bottom: 30px;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
-  }
+        /* --- 表格区域样式 (新增) --- */
+        #content-area {
+            margin-top: 30px;
+            text-align: left;
+            display: none; /* 默认隐藏 */
+            animation: fadeIn 0.5s ease;
+        }
 
-  /* 按钮容器，使用网格布局 */
-  .button-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 20px;
-    margin-top: 30px;
-  }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-  /* 按钮通用样式 */
-  .btn {
-    padding: 14px 20px;
-    font-size: 1.1em;
-    font-weight: 600;
-    text-transform: uppercase;
-    border: none;
-    border-radius: 10px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    letter-spacing: 1px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
-  }
+        .table-container {
+            max-height: 400px; /* 限制高度，内容多时出现滚动条 */
+            overflow-y: auto;
+            border-radius: 10px;
+            border: 1px solid #eee;
+        }
 
-  /* 按钮悬停和点击效果 */
-  .btn:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 7px 15px rgba(0, 0, 0, 0.2);
-  }
+        table { width: 100%; border-collapse: collapse; background: white; }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background-color: #f8f9fa; color: #333; position: sticky; top: 0; z-index: 10; }
+        tr:hover { background-color: #f1f1f1; }
+        
+        /* 关闭按钮 */
+        .close-btn {
+            display: block;
+            margin: 0 auto 15px auto;
+            background: transparent;
+            border: 1px solid #ccc;
+            color: #666;
+            padding: 5px 15px;
+            border-radius: 15px;
+            cursor: pointer;
+        }
+        .close-btn:hover { background: #eee; }
 
-  .btn:active {
-    transform: translateY(1px);
-  }
-
-  /* 不同按钮的颜色 */
-  .btn-primary {
-    background-color: #4c6ef5;
-    color: white;
-  }
-
-  .btn-primary:hover {
-    background-color: #3a56d9;
-  }
-
-  .btn-secondary {
-    background-color: #f06595;
-    color: white;
-  }
-
-  .btn-secondary:hover {
-    background-color: #d94f7a;
-  }
-
-  .btn-tertiary {
-    background-color: #22b8cf;
-    color: white;
-  }
-
-  .btn-tertiary:hover {
-    background-color: #1aa9b9;
-  }
-
-  /* 响应式调整 */
-  @media (max-width: 480px) {
-    .container {
-      padding: 30px 20px;
-    }
-
-    h1 {
-      font-size: 2.5em;
-    }
-
-    .btn {
-      padding: 12px 15px;
-      font-size: 1em;
-    }
-  }
-</style>
+    </style>
 </head>
 <body>
 
 <div class="container">
-  <h1>班级管理系统</h1>
-  <p style="color: #4a5568; font-size: 1.1em; margin-bottom: 20px;">一个简洁高效的管理平台，助您轻松管理班级事务。</p >
-  
-  <div class="button-container">
-    <button class="btn btn-primary" onclick="alert('功能开发中：学生管理')">学生管理</button>
-    <button class="btn btn-secondary" onclick="alert('功能开发中：成绩管理')">成绩管理</button>
-    <button class="btn btn-tertiary" onclick="alert('功能开发中：课程管理')">课程管理</button>
-  </div>
+    <h1>班级管理系统</h1>
+    
+    <div class="btn-group">
+        <!-- 给第一个按钮添加点击事件 -->
+        <button class="btn btn-student" onclick="showStudentTable()">学生管理</button>
+        <button class="btn btn-grade" onclick="alert('成绩管理功能开发中...')">成绩管理</button>
+        <button class="btn btn-course" onclick="alert('课程管理功能开发中...')">课程管理</button>
+    </div>
+
+    <!-- 这里是用来显示表格的区域 -->
+    <div id="content-area">
+        <button class="close-btn" onclick="hideContent()">收起表格</button>
+        <div class="table-container">
+            <table id="student-table">
+                <thead>
+                    <tr>
+                        <th>序号</th>
+                        <th>学号</th>
+                        <th>姓名</th>
+                        <th>性别</th>
+                        <th>年级</th>
+                        <th>班级</th>
+                    </tr>
+                </thead>
+                <tbody id="table-body">
+                    <!-- 数据将通过 JS 插入这里 -->
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
+
+<script>
+    // 1. 这里是你图片里的学生数据
+    const students = [
+        { id: 421, sno: "202485013001", name: "邹新玥", gender: "女", grade: "2024", cls: "网安24-1" },
+        { id: 422, sno: "202485013002", name: "魏雪莹", gender: "女", grade: "2024", cls: "网安24-1" },
+        { id: 423, sno: "202485013003", name: "邹芸羽", gender: "女", grade: "2024", cls: "网安24-1" },
+        { id: 424, sno: "202485013004", name: "胡帆", gender: "女", grade: "2024", cls: "网安24-1" },
+        { id: 425, sno: "202485013005", name: "慕妍冰", gender: "女", grade: "2024", cls: "网安24-1" },
+        { id: 426, sno: "202485013006", name: "乔庆曦", gender: "女", grade: "2024", cls: "网安24-1" },
+        { id: 427, sno: "202485013007", name: "王欣蕊", gender: "女", grade: "2024", cls: "网安24-1" },
+        { id: 428, sno: "202485013008", name: "邵琪", gender: "女", grade: "2024", cls: "网安24-1" },
+        { id: 429, sno: "202485013009", name: "徐嘉启", gender: "女", grade: "2024", cls: "网安24-1" },
+        { id: 430, sno: "202485013010", name: "刘雨杰", gender: "女", grade: "2024", cls: "网安24-1" },
+        { id: 431, sno: "202485013011", name: "马晓晗", gender: "女", grade: "2024", cls: "网安24-1" },
+        { id: 432, sno: "202485013012", name: "孙雅洁", gender: "女", grade: "2024", cls: "网安24-1" },
+        { id: 433, sno: "202485013013", name: "闫嘉欣", gender: "男", grade: "2024", cls: "网安24-1" },
+        { id: 434, sno: "202485013014", name: "谈广宅", gender: "男", grade: "2024", cls: "网安24-1" },
+        { id: 435, sno: "202485013015", name: "申千逸", gender: "男", grade: "2024", cls: "网安24-1" },
+        { id: 436, sno: "202485013016", name: "张延昭", gender: "男", grade: "2024", cls: "网安24-1" },
+        { id: 437, sno: "202485013017", name: "朱安森", gender: "男", grade: "2024", cls: "网安24-1" },
+        { id: 438, sno: "202485013018", name: "胡海涛", gender: "男", grade: "2024", cls: "网安24-1" },
+        { id: 439, sno: "202485013019", name: "王钰鸿", gender: "男", grade: "2024", cls: "网安24-1" },
+        { id: 440, sno: "202485013020", name: "魏传堃", gender: "男", grade: "2024", cls: "网安24-1" },
+        { id: 441, sno: "202485013021", name: "刘子铭", gender: "男", grade: "2024", cls: "网安24-1" },
+        { id: 442, sno: "202485013022", name: "于东平", gender: "男", grade: "2024", cls: "网安24-1" },
+        { id: 443, sno: "202485013023", name: "张坤鹏", gender: "男", grade: "2024", cls: "网安24-1" },
+        { id: 444, sno: "202485013024", name: "戴云鹏", gender: "男", grade: "2024", cls: "网安24-1" },
+        { id: 445, sno: "202485013025", name: "王浩宇", gender: "男", grade: "2024", cls: "网安24-1" },
+        { id: 446, sno: "202485013026", name: "徐伊凡", gender: "男", grade: "2024", cls: "网安24-1" },
+        { id: 447, sno: "202485013027", name: "赵汉松", gender: "男", grade: "2024", cls: "网安24-1" },
+        { id: 448, sno: "202485013028", name: "于欣弘", gender: "男", grade: "2024", cls: "网安24-1" },
+        { id: 449, sno: "202485013029", name: "马椿程", gender: "男", grade: "2024", cls: "网安24-1" },
+        { id: 450, sno: "202485013030", name: "徐加泽", gender: "男", grade: "2024", cls: "网安24-1" },
+        { id: 451, sno: "202485013031", name: "刘成铭", gender: "男", grade: "2024", cls: "网安24-1" },
+        { id: 452, sno: "202485013032", name: "吴昊冉", gender: "男", grade: "2024", cls: "网安24-1" },
+        { id: 453, sno: "202485013033", name: "张子豪", gender: "男", grade: "2024", cls: "网安24-1" },
+        { id: 454, sno: "202485013034", name: "史卜硕", gender: "男", grade: "2024", cls: "网安24-1" },
+        { id: 455, sno: "202485013035", name: "荆惜祺", gender: "男", grade: "2024", cls: "网安24-1" },
+        { id: 456, sno: "202485013036", name: "袁佳乐", gender: "男", grade: "2024", cls: "网安24-1" },
+        { id: 457, sno: "202485013037", name: "肖佳城", gender: "男", grade: "2024", cls: "网安24-1" },
+        { id: 458, sno: "202485013038", name: "郭志翔", gender: "男", grade: "2024", cls: "网安24-1" },
+        { id: 459, sno: "202485013039", name: "杨龙", gender: "男", grade: "2024", cls: "网安24-1" },
+        { id: 460, sno: "202485013040", name: "王中鸣", gender: "男", grade: "2024", cls: "网安24-1" }
+    ];
+
+    // 2. 显示表格的函数
+    function showStudentTable() {
+        const contentArea = document.getElementById('content-area');
+        const tableBody = document.getElementById('table-body');
+        
+        // 清空旧数据（防止重复点击累加）
+        tableBody.innerHTML = '';
+
+        // 循环生成表格行
+        students.forEach(student => {
+            const row = `
+                <tr>
+                    <td>${student.id}</td>
+                    <td>${student.sno}</td>
+                    <td>${student.name}</td>
+                    <td>${student.gender}</td>
+                    <td>${student.grade}</td>
+                    <td>${student.cls}</td>
+                </tr>
+            `;
+            tableBody.innerHTML += row;
+        });
+
+        // 显示区域
+        contentArea.style.display = 'block';
+    }
+
+    // 3. 隐藏表格的函数
+    function hideContent() {
+        document.getElementById('content-area').style.display = 'none';
+    }
+</script>
 
 </body>
 </html>
